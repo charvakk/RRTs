@@ -5,10 +5,12 @@
 #include <openrave/utils.h>
 #include <openrave/planningutils.h>
 #include <ctime>
+#include <iostream>
+#include <fstream>
 
 #define COMPUTATION_TIME 35000
 #define STEP_SIZE 0.4
-#define GOAL_BIAS 5
+dReal GOAL_BIAS = 31;
 #define INPUT_SIZE 52
 #define CLOSE_ENOUGH 0.2
 #define SMOOTHING_ITERATIONS 200
@@ -128,8 +130,17 @@ public:
                     "Plans and executes path to given goal configuration using Bidirectional RRTs.");
     RegisterCommand("rrtconnect",boost::bind(&rrt_module::RRTConnect,this,_1,_2),
                     "Plans and executes path to given goal configuration using RRTConnect.");
+    RegisterCommand("setbias",boost::bind(&rrt_module::SetBias,this,_1,_2),
+                    "Sets the goal bias for planning with the RRT-Connect.");
   }
   virtual ~rrt_module() {}
+
+  bool SetBias(ostream& sout, istream& sin){
+    vector<dReal> in = GetInputAsVector(sout, sin);
+    GOAL_BIAS = in[0];
+    cout << GOAL_BIAS << endl;
+    return true;
+  }
 
   bool BiRRT(ostream& sout, istream& sin){
 
@@ -224,17 +235,17 @@ public:
           configPath.push_back(pnode->getConfiguration());
 
 
-        cout << "Found a path!!!" << endl;
-        cout << "Executing the path." << endl;
-
-        cout << "Number of nodes explored :" << endl;
-        cout << tree->getSize() << endl;
-
-        cout << "Path length: " << configPath.size() << endl;
+//        cout << "Found a path!!!" << endl;
+//        cout << "Executing the path." << endl;
+//
+//        cout << "Number of nodes explored :" << endl;
+//        cout << tree->getSize() << endl;
+//
+//        cout << "Path length: " << configPath.size() << endl;
 
         endTime = clock();
 
-        DrawPath(configPath, red);
+//        DrawPath(configPath, red);
 
         ShortcutSmoothing(path);
 
@@ -243,20 +254,22 @@ public:
         for(NodePtr pnode : path)
           configPath2.push_back(pnode->getConfiguration());
 
-        cout << "Smoothed path length :" << configPath2.size() << endl;
+//        cout << "Smoothed path length :" << configPath2.size() << endl;
 
         clock_t endAfterSmoothing = clock();
 
-        DrawPath(configPath2, blue);
+//        DrawPath(configPath2, blue);
 
         double timeForAlgorithm = (endTime-startTime)/(double)CLOCKS_PER_SEC;
         double timeForSmoothing = (endAfterSmoothing-endTime)/(double)CLOCKS_PER_SEC;
 
 
-        cout << "Time for computing the path: " << timeForAlgorithm << endl;
-        cout << "Time for smooothing the path: " << timeForSmoothing << endl;
+//        cout << "Time for computing the path: " << timeForAlgorithm << endl;
+//        cout << "Time for smooothing the path: " << timeForSmoothing << endl;
 
-        ExecuteTrajectory(configPath2);
+        WriteStuffToFile(timeForAlgorithm, timeForSmoothing, tree->getSize(), configPath.size(), configPath2.size());
+
+//        ExecuteTrajectory(configPath2);
         return true;
       }
       if(k % 5000 == 0)
@@ -495,6 +508,7 @@ public:
   void ShortcutSmoothing(vector<NodePtr>& priorPath){
 
     for(int k = 0; k < SMOOTHING_ITERATIONS; ++k){
+//      WritePathLengthToFile(k, priorPath.size());
       float rand1 = RandomNumberGenerator()/100;
       float rand2 = RandomNumberGenerator()/100;
 
@@ -542,6 +556,7 @@ public:
         priorPath.insert(find(priorPath.begin(), priorPath.end(), temp)+1, shorter.begin()+1, shorter.end()-1);
       }else
         continue;
+
     }
   }
 
@@ -567,6 +582,30 @@ public:
       _handles.push_back(_penv->plot3(&point[0], 1, 1, 6, &raveColor[0], 0, true));
     }
   }
+
+  void WriteDurationsToFile(dReal bias, double algo, double smoothing){
+    ofstream file;
+    file.open("computation_times.csv", ios_base::app);
+    file << std::fixed << std::setprecision(2) << bias << "," << algo << "," << smoothing << "\n";
+  }
+
+  void WriteDurationToFile(dReal bias, double algo){
+      ofstream file;
+      file.open("connect_times_for_biases.csv", ios_base::app);
+      file << std::fixed << std::setprecision(2) << bias << "," << algo << "\n";
+    }
+
+  void WritePathLengthToFile(int num, int size){
+      ofstream file;
+      file.open("smoothing_path_length.csv", ios_base::app);
+      file << std::fixed << std::setprecision(2) << num << "," << size << "\n";
+    }
+
+  void WriteStuffToFile(double algo, double smoothing, int nodes, int unsmoothed, int smoothed){
+      ofstream file;
+      file.open("5stuff.csv", ios_base::app);
+      file << std::fixed << std::setprecision(2) << algo << "," << smoothing << "," << nodes << "," << unsmoothed << "," << smoothed << "\n";
+    }
 
 
 private:

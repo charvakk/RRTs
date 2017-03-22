@@ -28,7 +28,7 @@ def tuckarms(env,robot):
 if __name__ == "__main__":
 
     env = Environment()
-    env.SetViewer('qtcoin')
+    # env.SetViewer('qtcoin')
     env.Reset()        
     # load a scene from ProjectRoom environment XML file
     env.Load('hw3.env.xml')
@@ -72,9 +72,16 @@ if __name__ == "__main__":
         ### YOUR CODE HERE ###
         ###call your plugin to plan, draw, and execute a path from the current configuration of the left arm to the goalconfig
         print 'calling rrt now'
+        # biases = []
+        # for i in range(1, 97, 5):
+        #     biases.append(i)
+        # for bias in biases:
+        # rrt.SendCommand('setbias ' + str(bias))    
         # command = 'birrt ' + str(goalconfig)
-        command = 'rrtconnect ' + str(goalconfig)
-        rrt.SendCommand(command)
+        for i in range(30):
+            command = 'rrtconnect ' + str(goalconfig)
+            rrt.SendCommand(command)
+        
         print 'rrt ended'
         ### END OF YOUR CODE ###
     waitrobot(robot)
