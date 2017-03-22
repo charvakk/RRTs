@@ -6,7 +6,7 @@
 #include <openrave/planningutils.h>
 
 #define COMPUTATION_TIME 35000
-#define STEP_SIZE 0.4
+#define STEP_SIZE 0.3
 #define GOAL_BIAS 5
 #define INPUT_SIZE 52
 #define CLOSE_ENOUGH 0.2
