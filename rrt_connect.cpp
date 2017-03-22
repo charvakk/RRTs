@@ -199,7 +199,8 @@ public:
           double timeForAlgorithm = (endTime-startTime)/(double)CLOCKS_PER_SEC;
           double timeForSmoothing = (endAfterSmoothing-endTime)/(double)CLOCKS_PER_SEC;
 
-
+          WriteBiStuffToFile(timeForAlgorithm, timeForSmoothing, (treeA->getSize()+treeB->getSize()), configPath.size());
+//
           cout << "Time for computing the path: " << timeForAlgorithm << endl;
           cout << "Time for smooothing the path: " << timeForSmoothing << endl;
           ExecuteTrajectory(configPath2);
@@ -235,17 +236,17 @@ public:
           configPath.push_back(pnode->getConfiguration());
 
 
-//        cout << "Found a path!!!" << endl;
-//        cout << "Executing the path." << endl;
-//
-//        cout << "Number of nodes explored :" << endl;
-//        cout << tree->getSize() << endl;
-//
-//        cout << "Path length: " << configPath.size() << endl;
+        cout << "Found a path!!!" << endl;
+        cout << "Executing the path." << endl;
+
+        cout << "Number of nodes explored :" << endl;
+        cout << tree->getSize() << endl;
+
+        cout << "Path length: " << configPath.size() << endl;
 
         endTime = clock();
 
-//        DrawPath(configPath, red);
+        DrawPath(configPath, red);
 
         ShortcutSmoothing(path);
 
@@ -254,22 +255,22 @@ public:
         for(NodePtr pnode : path)
           configPath2.push_back(pnode->getConfiguration());
 
-//        cout << "Smoothed path length :" << configPath2.size() << endl;
+        cout << "Smoothed path length :" << configPath2.size() << endl;
 
         clock_t endAfterSmoothing = clock();
 
-//        DrawPath(configPath2, blue);
+        DrawPath(configPath2, blue);
 
         double timeForAlgorithm = (endTime-startTime)/(double)CLOCKS_PER_SEC;
         double timeForSmoothing = (endAfterSmoothing-endTime)/(double)CLOCKS_PER_SEC;
 
 
-//        cout << "Time for computing the path: " << timeForAlgorithm << endl;
-//        cout << "Time for smooothing the path: " << timeForSmoothing << endl;
+        cout << "Time for computing the path: " << timeForAlgorithm << endl;
+        cout << "Time for smooothing the path: " << timeForSmoothing << endl;
 
         WriteStuffToFile(timeForAlgorithm, timeForSmoothing, tree->getSize(), configPath.size(), configPath2.size());
 
-//        ExecuteTrajectory(configPath2);
+        ExecuteTrajectory(configPath2);
         return true;
       }
       if(k % 5000 == 0)
@@ -606,6 +607,12 @@ public:
       file.open("5stuff.csv", ios_base::app);
       file << std::fixed << std::setprecision(2) << algo << "," << smoothing << "," << nodes << "," << unsmoothed << "," << smoothed << "\n";
     }
+
+  void WriteBiStuffToFile(double algo, double smoothing, int nodes, int unsmoothed){
+        ofstream file;
+        file.open("extra_stuff.csv", ios_base::app);
+        file << std::fixed << std::setprecision(2) << algo+smoothing << "," << nodes << "," << unsmoothed << "\n";
+      }
 
 
 private:
