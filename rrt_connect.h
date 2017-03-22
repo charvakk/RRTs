@@ -44,18 +44,9 @@ public:
 
   int getId() const;
 
-//  dReal distanceFrom(NodePtr otherNode);
+  bool operator ==(RRTNode& other);
 
-//  NodePtr newNodeTowards(NodePtr otherNode);
-
-  /* Returns true if the robot is colliding in this node configuration. */
-//  bool checkCollision(EnvironmentBasePtr penv);
-
-  /* Equals override based on configuration equality. */
-  bool operator==(const RRTNode& other);
-
-  bool operator!=(const RRTNode& other);
-
+  bool operator !=(RRTNode& other);
 
 };
 
@@ -69,7 +60,6 @@ class NodeTree {
 private:
   /* Pointers to all the nodes explored. */
   vector<NodePtr> _nodes;
-//  tr1::unordered_map<int, NodePtr> _nodes;
 
 public:
   NodePtr getMostRecentNode() const;
@@ -90,16 +80,6 @@ public:
   vector<NodePtr>& getAllNodes();
 
   size_t getSize();
-  /* Returns the nearest neighbor to the given node. */
-//  NodePtr getClosestTo(NodePtr node);
-
-//  string extendTo(NodePtr node);
-//
-//  string connectTo(NodePtr node);
-
 };
-
-/* Returns a node from the node tree closest to the given node. */
-//NodePtr GetClosestTo(RRTNode &node);
 
 #endif /* RRT_CONNECT_H_ */

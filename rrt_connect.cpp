@@ -10,6 +10,7 @@
 #define GOAL_BIAS 5
 #define INPUT_SIZE 52
 #define CLOSE_ENOUGH 0.2
+#define SMOOTHING_ITERATIONS 200
 
 typedef boost::shared_ptr<RRTNode> NodePtr;
 typedef boost::shared_ptr<NodeTree> TreePtr;
@@ -46,6 +47,18 @@ const NodePtr RRTNode::getParentNode() const{
 
 void RRTNode::setParentNode(const NodePtr parentNode){
   _parentNode = parentNode;
+}
+
+bool RRTNode::operator ==(RRTNode& other){
+  for(size_t i = 0; i < _configuration.size(); ++i){
+    if(_configuration[i] != other.getConfiguration()[i])
+      return false;
+  }
+  return true;
+}
+
+bool RRTNode::operator !=(RRTNode& other){
+  return !this->operator ==(other);
 }
 
 
@@ -161,7 +174,25 @@ public:
           }
           cout << "Number of nodes explored :" << endl;
           cout << treeA->getSize() + treeB->getSize() << endl;
-          ExecuteTrajectory(configPath);
+          cout << "Path length :" << configPath.size() << endl;
+
+          ShortcutSmoothing(fullPath);
+
+          vector< vector<dReal> > configPath2;
+          configPath2.reserve(fullPath.size());
+          for(NodePtr pnode : fullPath)
+            configPath2.push_back(pnode->getConfiguration());
+
+          cout << "Smoothed Path :" << endl;
+          for(auto c : configPath2){
+            for(size_t i = 0; i < c.size(); ++i){
+              cout << c[i] << " ";
+            }
+            cout << endl;
+          }
+          cout << "Smoothed path length :" << configPath2.size() << endl;
+
+          ExecuteTrajectory(configPath2);
           return true;
         }
       }
@@ -207,6 +238,24 @@ public:
         cout << "Number of nodes explored :" << endl;
         cout << tree->getSize() << endl;
 
+        cout << "Path length :" << configPath.size() << endl;
+
+        ShortcutSmoothing(path);
+
+        vector< vector<dReal> > configPath2;
+        configPath2.reserve(path.size());
+        for(NodePtr pnode : path)
+          configPath2.push_back(pnode->getConfiguration());
+
+        cout << "Smoothed Path :" << endl;
+        for(auto c : configPath2){
+          for(size_t i = 0; i < c.size(); ++i){
+            cout << c[i] << " ";
+          }
+          cout << endl;
+        }
+        cout << "Smoothed path length :" << configPath2.size() << endl;
+
         ExecuteTrajectory(configPath);
         return true;
       }
@@ -222,7 +271,7 @@ public:
     _penv->GetRobots(_robots);
     _robot = _robots.at(0);
 
-
+    srand(time(NULL));
     _robot->GetActiveDOFValues(_startConfig);
     _goalConfig = GetInputAsVector(so, si);
     _robot->GetActiveDOFLimits(_activeLowerLimits, _activeUpperLimits);
@@ -387,7 +436,8 @@ public:
     vector<dReal> fromConfig = from->getConfiguration();
     vector<dReal> toConfig = to->getConfiguration();
     dReal mag = UnweightedDistance(from, to);
-
+    if(mag == 0)
+      throw 0;
     for(size_t i=0; i < fromConfig.size(); ++i){
       unitVector.push_back((toConfig[i] - fromConfig[i])/mag);
     }
@@ -441,6 +491,60 @@ public:
       return closestNode;
   }
 
+
+  void ShortcutSmoothing(vector<NodePtr>& priorPath){
+
+    for(int k = 0; k < SMOOTHING_ITERATIONS; ++k){
+      float rand1 = RandomNumberGenerator()/100;
+      float rand2 = RandomNumberGenerator()/100;
+
+      int index1 = static_cast<int>(rand1 * priorPath.size());
+      int index2 = static_cast<int>(rand2 * priorPath.size());
+
+      if(index1 == index2)
+        continue;
+
+      NodePtr node1 = priorPath[index1];
+      NodePtr temp = node1;
+      NodePtr node2 = priorPath[index2];
+      TreePtr tempTree(new NodeTree());
+      tempTree->addNode(node1);
+
+      string status;
+      // connect node1 and node2
+      do{
+        NodePtr newNode = NewStep(node1, node2);
+
+        if(InLimits(newNode) && !CheckCollision(newNode)){
+          newNode->setParentNode(node1);
+          tempTree->addNode(newNode);
+          node1 = newNode;
+          if(UnweightedDistance(newNode, node2) <= STEP_SIZE){
+            node2->setParentNode(newNode);
+            tempTree->addNode(node2);
+            status = "Reached";
+          }else
+            status = "Advanced";
+        }else
+          status = "Trapped";
+      }while(status == "Advanced");
+
+      if(status == "Reached"){
+        vector<NodePtr> shorter = tempTree->getAllNodes();
+
+        vector<NodePtr>::iterator it1 = find(priorPath.begin(), priorPath.end(), temp);
+        vector<NodePtr>::iterator it2 = find(priorPath.begin(), priorPath.end(), node2);
+
+        if(it1 == priorPath.end() || it2 == priorPath.begin() || it1+1 >= it2-1){
+          continue;
+        }
+        priorPath.erase(it1+1, it2-1);
+        priorPath.insert(find(priorPath.begin(), priorPath.end(), temp)+1, shorter.begin()+1, shorter.end()-1);
+      }else
+        continue;
+
+    }
+  }
 
 private:
   EnvironmentBasePtr _penv;
