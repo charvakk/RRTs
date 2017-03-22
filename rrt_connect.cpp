@@ -6,8 +6,6 @@
 #include <openrave/planningutils.h>
 
 #define COMPUTATION_TIME 35000
-//#define STEP_SIZE 0.18
-//#define STEP_SIZE 0.15
 #define STEP_SIZE 0.4
 #define GOAL_BIAS 5
 #define INPUT_SIZE 52
@@ -15,7 +13,6 @@
 
 typedef boost::shared_ptr<RRTNode> NodePtr;
 typedef boost::shared_ptr<NodeTree> TreePtr;
-typedef boost::shared_ptr<planningutils::SimpleDistanceMetric> SimpleDistanceMetricPtr;
 
 /* RRTNode method implementations.*/
 int RRTNode::_nodeCounter = 0;
@@ -51,82 +48,17 @@ void RRTNode::setParentNode(const NodePtr parentNode){
   _parentNode = parentNode;
 }
 
-/*dReal RRTNode::distanceFrom(NodePtr otherNode){
-  dReal distanceSquared = 0;
-  vector<dReal> otherNodeConfig = otherNode->getConfiguration();
-  for(size_t i = 0; i < _configuration.size(); ++i){
-    if(i == 3 || i == 6)
-      distanceSquared += pow(_configuration[i]/10000 - otherNodeConfig[i]/10000, 2);
-    else
-      distanceSquared += pow(_configuration[i] - otherNodeConfig[i], 2);
-  }
-  return sqrt(distanceSquared);
-}*/
-
-/*dReal RRTNode::distanceFrom(NodePtr otherNode){
-  dReal distanceSquared = 0;
-  vector<dReal> otherNodeConfig = otherNode->getConfiguration();
-  for(size_t i = 0; i < _configuration.size(); ++i){
-    distanceSquared += pow(_configuration[i] - otherNodeConfig[i], 2);
-  }
-  return sqrt(distanceSquared);
-}*/
-
-
-/*NodePtr RRTNode::newNodeTowards(NodePtr otherNode){
-  vector<dReal> vectorBetweenNodes;
-  for(size_t i=0; i < _configuration.size(); ++i)
-    vectorBetweenNodes.push_back(otherNode->getConfiguration()[i] - _configuration[i]);
-  dReal magnitude = distanceFrom(otherNode);
-
-  NodePtr newNode(new RRTNode());
-  vector<dReal> newConfiguration;
-  for(size_t i=0; i < _configuration.size(); ++i)
-    newConfiguration.push_back(_configuration[i] + (vectorBetweenNodes[i]*STEP_SIZE/magnitude));
-
-  newNode->setConfiguration(newConfiguration);
-  return newNode;
-}*/
-
-/*bool RRTNode::operator==(const RRTNode& other){
-  bool result = true;
-  for(size_t i = 0; i < _configuration.size(); ++i){
-    result = result && (_configuration[i] == other.getConfiguration()[i]);
-  }
-  return result;
-}*/
-
-//bool RRTNode::operator==(const RRTNode& other){
-//  bool result = true;
-//  for(size_t i = 0; i < _configuration.size(); ++i){
-//    result = result && ((_configuration[i] - other.getConfiguration()[i]) < CLOSE_ENOUGH);
-//  }
-//  return result;
-//}
-
-//bool RRTNode::operator!=(const RRTNode& other){
-//  return !(*this == other);
-//}
 
 /*---------------------------------------------------------------------------------------------------------------------------*/
 
+
 /* NodeTree method implementations.*/
 NodePtr NodeTree::getMostRecentNode() const {
-//  int biggest = 0;
-//  NodePtr mostRecentNode;
-//  for(auto kv : _nodes){
-//    if(kv.first > biggest){
-//      biggest = kv.first;
-//      mostRecentNode = kv.second;
-//    }
-//  }
-//  return mostRecentNode;
   return _nodes.back();
 }
 
 bool NodeTree::addNode(NodePtr p_node){
   try{
-//    _nodes.insert({p_node->getId(), p_node});
     _nodes.push_back(p_node);
     return true;
   }catch(exception &e){
@@ -140,11 +72,6 @@ void NodeTree::deleteNode(NodePtr node){
   }
 
 NodePtr NodeTree::getNode(int id){
-//  for(auto kv : _nodes){
-//    if(kv.second->getId() == id)
-//      return kv.second;
-//  }
-//  throw 0;
   for(NodePtr n : _nodes){
     if(n->getId() == id)
       return n;
@@ -155,10 +82,6 @@ NodePtr NodeTree::getNode(int id){
 vector<NodePtr> NodeTree::getPathTo(int id){
   // Find the node
   NodePtr final = getNode(id);
-//  for(auto kv : _nodes){
-//    if(kv.second->getId() == id)
-//      final = kv.second;
-//  }
 
   // Find the path from the parents
   vector<NodePtr> path;
@@ -167,38 +90,20 @@ vector<NodePtr> NodeTree::getPathTo(int id){
     final = final->getParentNode();
     path.push_back(final);
   }
-//  std::reverse(path.begin(), path.end());   //Reverse the path since its been added end to start.
   return path;
 }
 
-vector<NodePtr> NodeTree::getAllNodes(){
-//  vector<NodePtr> allNodes;
-//  for(auto kv : _nodes){
-//    allNodes.push_back(kv.second);
-//  }
-
+vector<NodePtr>& NodeTree::getAllNodes(){
   return _nodes;
-
 }
 
 size_t NodeTree::getSize(){
   return _nodes.size();
 }
 
-/*NodePtr NodeTree::getClosestTo(NodePtr node){
-  dReal lowestDistance = numeric_limits<double>::max();
-  NodePtr closestNode;
-  for(NodePtr n : _nodes){
-    dReal distance = n->distanceFrom(node);
-    if(distance <= lowestDistance){
-      lowestDistance = distance;
-      closestNode = n;
-    }
-  }
-  return closestNode;
-}*/
 
 /*--------------------------------------------------------------------------------------------------------------------*/
+
 
 class rrt_module : public ModuleBase {
 public:
@@ -224,47 +129,28 @@ public:
     TreePtr treeB(new NodeTree());
     treeB->addNode(goalNode);
 
-
     for(int k = 0; k < COMPUTATION_TIME; ++k){
       NodePtr randomNode = CreateRandomNode();
 
       if(Extend(treeA, randomNode) != "Trapped"){
         if(Connect(treeB, treeA->getMostRecentNode()) == "Reached"){
+          treeA->getAllNodes().pop_back();
           vector<NodePtr> pathA = treeA->getPathTo(treeA->getMostRecentNode()->getId());
-//          vector<NodePtr> pathB = treeB->getPathTo(treeB->getMostRecentNode()->getId());
-//          vector<NodePtr> fullPath;
+          vector<NodePtr> pathB = treeB->getPathTo(treeB->getMostRecentNode()->getId());
+          vector<NodePtr> fullPath;
 
-//          vector<NodePtr> pathA = treeB->getPathTo(goalNode->getId());
-
-//          std::reverse(pathA.begin(), pathA.end());
-//          fullPath.reserve(pathA.size() + pathB.size()); // preallocate memory
-//          fullPath.insert(fullPath.end(), pathA.begin(), pathA.end()); //TODO check if this can be done with end, begin to avoid reversing
-//          fullPath.insert(fullPath.end(), pathB.begin(), pathB.end());
-
-//          vector<NodePtr> pathA = GetPath(goalNode);
+          std::reverse(pathA.begin(), pathA.end());
+          fullPath.reserve(pathA.size() + pathB.size()); // preallocate memory
+          fullPath.insert(fullPath.end(), pathA.begin(), pathA.end()); //TODO check if this can be done with end, begin to avoid reversing
+          fullPath.insert(fullPath.end(), pathB.begin(), pathB.end());
 
           vector< vector<dReal> > configPath;
-//          configPath.reserve(fullPath.size());
-//          for(NodePtr pnode : fullPath)
-//            configPath.push_back(pnode->getConfiguration());
-
-          configPath.reserve(pathA.size());
-          for(NodePtr pnode : pathA)
+          configPath.reserve(fullPath.size());
+          for(NodePtr pnode : fullPath)
             configPath.push_back(pnode->getConfiguration());
 
-          std::reverse(configPath.begin(), configPath.end());
           cout << "Found a path!!!" << endl;
           cout << "Executing the path." << endl;
-
-          cout << "limits " << endl;
-          for(size_t i = 0; i < _activeLowerLimits.size(); ++i){
-            cout << _activeLowerLimits[i]  << " ";
-          }
-          cout << endl;
-          for(size_t i = 0; i < _activeLowerLimits.size(); ++i){
-            cout << _activeUpperLimits[i] << " ";
-          }
-          cout << endl;
 
           cout << "path :" << endl;
           for(auto c : configPath){
@@ -299,7 +185,6 @@ public:
       NodePtr randomNode = CreateRandomNodeWithBias();
 
       string status = Connect(tree, randomNode);
-      cout << status << endl;
       if(status == "GoalReached"){
         vector<NodePtr> path = tree->getPathTo(goalNode->getId());
 
@@ -322,15 +207,6 @@ public:
         cout << "Number of nodes explored :" << endl;
         cout << tree->getSize() << endl;
 
-        cout << "limits " << endl;
-        for(size_t i = 0; i < _activeLowerLimits.size(); ++i){
-          cout << _activeLowerLimits[i]  << " ";
-        }
-        cout << endl;
-        for(size_t i = 0; i < _activeLowerLimits.size(); ++i){
-          cout << _activeUpperLimits[i] << " ";
-        }
-        cout << endl;
         ExecuteTrajectory(configPath);
         return true;
       }
@@ -360,22 +236,16 @@ public:
         _activeLowerLimits[i] = -M_PI;
       }
       _activeDOFRanges[i] = _activeUpperLimits[i]-_activeLowerLimits[i];
-//      cout << _activeDOFRanges[i] << endl;
     }
 
-//    _robot->GetActiveDOFWeights(_dofWeights);
-
-//    _dofWeights = {3.17104, 2.75674, 2.2325, 1.78948, 1.42903, 0.809013, 0.593084};
     _dofWeights = {3.17104, 2.75674, 2.2325, 1.78948, 0, 0.809013, 0};
-
-
-    _distanceMetric = SimpleDistanceMetricPtr(new planningutils::SimpleDistanceMetric(_robot));
 
     // Root and Goal nodes
     startNode = NodePtr(new RRTNode(_startConfig, nullptr));
     goalNode = NodePtr(new RRTNode(_goalConfig, nullptr));
   }
 
+  /* Returns a random node without any goal bias. */
   NodePtr CreateRandomNode(){
     vector<dReal> randomConfig(_activeLowerLimits.size());
     NodePtr randomNode(new RRTNode());
@@ -390,20 +260,15 @@ public:
   }
 
   NodePtr CreateRandomNodeWithBias(){
-    /*This method was referenced from the Internet.*/
+    /*The idea for goal biasing was referenced from the Internet.*/
     vector<dReal> randomConfig(_activeLowerLimits.size());
     NodePtr randomNode(new RRTNode());
 
     if(RandomNumberGenerator() <= GOAL_BIAS){
-//      cout << "GOAL SELECTED" << endl;
       return goalNode;
     }else{
-//      cout << "goal not selected" << endl;
       do{
         for(size_t i = 0; i < _activeLowerLimits.size(); ++i){
-//          if(i == 4 || i == 6)
-//            randomConfig[i] = 0;
-//          else
             randomConfig[i] = static_cast<dReal>((RandomNumberGenerator()/100 * (_activeDOFRanges[i])) + _activeLowerLimits[i]);
         }
         randomNode->setConfiguration(randomConfig);
@@ -411,7 +276,6 @@ public:
 
       return randomNode;
     }
-//    return goalNode;
   }
 
   /* Returns a random number between, and including, 0 and 99.*/
@@ -419,61 +283,40 @@ public:
     return rand() % 100;
   }
 
+  /* Checks collision of the robot with the environment and itself and returns true if there is any collision detected. */
   bool CheckCollision(NodePtr node){
-//    EnvironmentMutex& lock = _penv->GetMutex();
-//    lock.lock();
     _robot->SetActiveDOFValues(node->getConfiguration());
     bool check1 = _penv->CheckCollision(_robot);
     bool check2 = _penv->CheckSelfCollision(_robot);
     _robot->SetActiveDOFValues(_startConfig);
-//    cout << check << endl;
-//    lock.unlock();
     return check1 || check2;
-
-//    return false;
   }
 
+  /* Extends one step towards the given node. */
   string Extend(TreePtr tree, NodePtr node){
     NodePtr nearestNode = NearestNode(tree, node);
     NodePtr newNode = NewStep(nearestNode, node);
-    if(!CheckCollision(newNode)){
+    if(InLimits(newNode) && !CheckCollision(newNode)){
       newNode->setParentNode(nearestNode);
       tree->addNode(newNode);
       if(UnweightedDistance(newNode, node) <= STEP_SIZE){
         node->setParentNode(newNode);
         tree->addNode(node);
-        if(node == goalNode)
-          return "GoalReached";
-        else
-          return "Reached";
+        return "Reached";
       }else
         return "Advanced";
     }else
       return "Trapped";
   }
 
-  /*string Connect(TreePtr tree, NodePtr node){
-    string status;
-//    cout << "4.1 HERE" << endl; //TODO
-    do{
-      status = Extend(tree, node);
-//      cout << "4.2 HERE" << endl; //TODO
-    }while(status == "Advanced");
-
-    return status;
-  }*/
-
+  /* Tries to connect the tree to the given node. */
   string Connect(TreePtr tree, NodePtr node){
     string status;
-    //    cout << "connecting" << endl;
     NodePtr nearestNode = NearestNode(tree, node);
     NodePtr start = nearestNode;
-    int i = 0;
     do{
-      i++;
       NodePtr newNode = NewStep(nearestNode, node);
 
-      //      if(InLimits(newNode) && !CheckCollision(newNode) && UnweightedDistance(start, newNode) < UnweightedDistance(start, node)){
       if(InLimits(newNode) && !CheckCollision(newNode)){
         newNode->setParentNode(nearestNode);
         tree->addNode(newNode);
@@ -489,11 +332,11 @@ public:
           status = "Advanced";
       }else{
         return "Trapped";}
-      //      cout << "advanced" << endl;
-    }while(status == "Advanced");// && i < 10000);
+    }while(status == "Advanced");
     return status;
   }
 
+  /* Checks if the configuration of the node is in DOF limits. */
   bool InLimits(NodePtr node){
     vector<dReal> config = node->getConfiguration();
     for(size_t i = 0; i < config.size(); ++i){
@@ -503,6 +346,7 @@ public:
     return true;
   }
 
+  /*Parses the input from the python script and returns the goal config. */
   vector<dReal> GetInputAsVector(ostream& sout, istream& sinput){
     char input[INPUT_SIZE];
     vector<dReal> goalConfig;
@@ -518,6 +362,7 @@ public:
     return goalConfig;
   }
 
+  /* Generates and executes a given configuration path. */
   void ExecuteTrajectory(vector< vector<dReal> > &configPath){
     EnvironmentMutex& lock = _penv->GetMutex();
     lock.lock();
@@ -529,8 +374,6 @@ public:
       traj->Insert(0, config);
     traj->Insert(0, _startConfig);
 
-    //    planningutils::SmoothActiveDOFTrajectory(traj, _robot);
-
     planningutils::RetimeActiveDOFTrajectory(traj, _robot);
 
     _robot->GetController()->SetPath(traj);
@@ -538,6 +381,7 @@ public:
     lock.unlock();
   }
 
+  /* Returns a new node in the direction of the second node at a step_size distance from the first node. */
   NodePtr NewStep(NodePtr from, NodePtr to){
     vector<dReal> unitVector;
     vector<dReal> fromConfig = from->getConfiguration();
@@ -556,54 +400,34 @@ public:
     return newNode;
   }
 
+  /* Calculates and returns the distance between two nodes taking into consideration the DOF weights. */
   dReal WeightedDistance(NodePtr node1, NodePtr node2){
       dReal distanceSquared = 0;
       vector<dReal> node1Config = node1->getConfiguration();
       vector<dReal> node2Config = node2->getConfiguration();
 
-//      Normalized distance
+      // Weighted distance
       for(size_t i = 0; i < node1Config.size(); ++i){
-//        if(i == 4 || i == 6)
-//          distanceSquared += pow((node1Config[i] - node2Config[i])*0, 2);
-//        else
-//        if(i == 1 || i == 4)
-//          distanceSquared += pow((node1Config[i] - node2Config[i])*0.1/_activeDOFRanges[i], 2);
-//        else
-//          distanceSquared += pow((node1Config[i] - node2Config[i])*1/_activeDOFRanges[i], 2);
-//        distanceSquared += pow((node1Config[i] - node2Config[i])*_dofWeights[i]/_activeDOFRanges[i], 2);
         distanceSquared += pow((node1Config[i] - node2Config[i])*_dofWeights[i], 2);
-
       }
 
-//      dReal dist = _distanceMetric->Eval(node1->getConfiguration(), node2->getConfiguration());
-//      return dist;
       return sqrt(distanceSquared);
   }
 
+  /* Calculates and returns the distance between two nodes. */
   dReal UnweightedDistance(NodePtr node1, NodePtr node2){
         dReal distanceSquared = 0;
         vector<dReal> node1Config = node1->getConfiguration();
         vector<dReal> node2Config = node2->getConfiguration();
 
-  //      Normalized distance
         for(size_t i = 0; i < node1Config.size(); ++i){
-  //        if(i == 4 || i == 6)
-  //          distanceSquared += pow((node1Config[i] - node2Config[i])*0, 2);
-  //        else
-  //        if(i == 1 || i == 4)
-  //          distanceSquared += pow((node1Config[i] - node2Config[i])*0.1/_activeDOFRanges[i], 2);
-  //        else
-  //          distanceSquared += pow((node1Config[i] - node2Config[i])*1/_activeDOFRanges[i], 2);
-  //        distanceSquared += pow((node1Config[i] - node2Config[i])*_dofWeights[i]/_activeDOFRanges[i], 2);
           distanceSquared += pow((node1Config[i] - node2Config[i]), 2);
-
         }
 
-  //      dReal dist = _distanceMetric->Eval(node1->getConfiguration(), node2->getConfiguration());
-  //      return dist;
         return sqrt(distanceSquared);
     }
 
+  /* Returns the nearest node in the tree to the node. */
   NodePtr NearestNode(TreePtr tree, NodePtr node){
       dReal lowestDistance = numeric_limits<double>::max();
       NodePtr closestNode;
@@ -616,17 +440,6 @@ public:
       }
       return closestNode;
   }
-
-  /*vector<NodePtr> GetPath(NodePtr node){
-    vector<NodePtr> path;
-    path.push_back(node);
-    while(node->getParentNode() != nullptr){
-      node = node->getParentNode();
-      path.push_back(node);
-    }
-    //  std::reverse(path.begin(), path.end());   //Reverse the path since its been added end to start.
-    return path;
-  }*/
 
 
 private:
@@ -641,8 +454,6 @@ private:
   NodePtr goalNode;
   vector<dReal> _activeDOFRanges;
   vector<dReal> _dofWeights;
-  SimpleDistanceMetricPtr _distanceMetric;
-
   };
 
 

@@ -87,7 +87,7 @@ public:
   /* Returns the path from the root to the node of given ID, including the node. */
   vector<NodePtr> getPathTo(int id);
 
-  vector<NodePtr> getAllNodes();
+  vector<NodePtr>& getAllNodes();
 
   size_t getSize();
   /* Returns the nearest neighbor to the given node. */
