@@ -4,9 +4,10 @@
 #include <math.h>
 #include <openrave/utils.h>
 #include <openrave/planningutils.h>
+#include <ctime>
 
 #define COMPUTATION_TIME 35000
-#define STEP_SIZE 0.3
+#define STEP_SIZE 0.4
 #define GOAL_BIAS 5
 #define INPUT_SIZE 52
 #define CLOSE_ENOUGH 0.2
@@ -168,6 +169,8 @@ public:
           cout << "Number of nodes explored: " << treeA->getSize() + treeB->getSize() << endl;
           cout << "Path length :" << configPath.size() << endl;
 
+          endTime = clock();
+
           DrawPath(configPath, red);
 
           ShortcutSmoothing(fullPath);
@@ -179,8 +182,15 @@ public:
 
           cout << "Smoothed path length :" << configPath2.size() << endl;
 
+          clock_t endAfterSmoothing = clock();
           DrawPath(configPath2, blue);
 
+          double timeForAlgorithm = (endTime-startTime)/(double)CLOCKS_PER_SEC;
+          double timeForSmoothing = (endAfterSmoothing-endTime)/(double)CLOCKS_PER_SEC;
+
+
+          cout << "Time for computing the path: " << timeForAlgorithm << endl;
+          cout << "Time for smooothing the path: " << timeForSmoothing << endl;
           ExecuteTrajectory(configPath2);
           return true;
         }
@@ -222,6 +232,8 @@ public:
 
         cout << "Path length: " << configPath.size() << endl;
 
+        endTime = clock();
+
         DrawPath(configPath, red);
 
         ShortcutSmoothing(path);
@@ -233,7 +245,16 @@ public:
 
         cout << "Smoothed path length :" << configPath2.size() << endl;
 
+        clock_t endAfterSmoothing = clock();
+
         DrawPath(configPath2, blue);
+
+        double timeForAlgorithm = (endTime-startTime)/(double)CLOCKS_PER_SEC;
+        double timeForSmoothing = (endAfterSmoothing-endTime)/(double)CLOCKS_PER_SEC;
+
+
+        cout << "Time for computing the path: " << timeForAlgorithm << endl;
+        cout << "Time for smooothing the path: " << timeForSmoothing << endl;
 
         ExecuteTrajectory(configPath2);
         return true;
@@ -271,6 +292,7 @@ public:
     // Root and Goal nodes
     startNode = NodePtr(new RRTNode(_startConfig, nullptr));
     goalNode = NodePtr(new RRTNode(_goalConfig, nullptr));
+    startTime = clock();
   }
 
   /* Returns a random node without any goal bias. */
@@ -562,6 +584,8 @@ private:
   vector<GraphHandlePtr> _handles;
   string red = "red";
   string blue = "blue";
+  clock_t startTime;
+  clock_t endTime;
   };
 
 
