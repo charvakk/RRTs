@@ -72,8 +72,8 @@ if __name__ == "__main__":
         ### YOUR CODE HERE ###
         ###call your plugin to plan, draw, and execute a path from the current configuration of the left arm to the goalconfig
         print 'calling rrt now'
-        command = 'birrt ' + str(goalconfig)
-        # command = 'rrtconnect ' + str(goalconfig)
+        # command = 'birrt ' + str(goalconfig)
+        command = 'rrtconnect ' + str(goalconfig)
         rrt.SendCommand(command)
         print 'rrt ended'
         ### END OF YOUR CODE ###

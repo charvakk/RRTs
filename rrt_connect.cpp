@@ -165,16 +165,10 @@ public:
           cout << "Found a path!!!" << endl;
           cout << "Executing the path." << endl;
 
-          cout << "path :" << endl;
-          for(auto c : configPath){
-            for(size_t i = 0; i < c.size(); ++i){
-              cout << c[i] << " ";
-            }
-            cout << endl;
-          }
-          cout << "Number of nodes explored :" << endl;
-          cout << treeA->getSize() + treeB->getSize() << endl;
+          cout << "Number of nodes explored: " << treeA->getSize() + treeB->getSize() << endl;
           cout << "Path length :" << configPath.size() << endl;
+
+          DrawPath(configPath, red);
 
           ShortcutSmoothing(fullPath);
 
@@ -183,14 +177,9 @@ public:
           for(NodePtr pnode : fullPath)
             configPath2.push_back(pnode->getConfiguration());
 
-          cout << "Smoothed Path :" << endl;
-          for(auto c : configPath2){
-            for(size_t i = 0; i < c.size(); ++i){
-              cout << c[i] << " ";
-            }
-            cout << endl;
-          }
           cout << "Smoothed path length :" << configPath2.size() << endl;
+
+          DrawPath(configPath2, blue);
 
           ExecuteTrajectory(configPath2);
           return true;
@@ -228,17 +217,12 @@ public:
         cout << "Found a path!!!" << endl;
         cout << "Executing the path." << endl;
 
-        cout << "path :" << endl;
-        for(auto c : configPath){
-          for(size_t i = 0; i < c.size(); ++i){
-            cout << c[i] << " ";
-          }
-          cout << endl;
-        }
         cout << "Number of nodes explored :" << endl;
         cout << tree->getSize() << endl;
 
-        cout << "Path length :" << configPath.size() << endl;
+        cout << "Path length: " << configPath.size() << endl;
+
+        DrawPath(configPath, red);
 
         ShortcutSmoothing(path);
 
@@ -247,16 +231,11 @@ public:
         for(NodePtr pnode : path)
           configPath2.push_back(pnode->getConfiguration());
 
-        cout << "Smoothed Path :" << endl;
-        for(auto c : configPath2){
-          for(size_t i = 0; i < c.size(); ++i){
-            cout << c[i] << " ";
-          }
-          cout << endl;
-        }
         cout << "Smoothed path length :" << configPath2.size() << endl;
 
-        ExecuteTrajectory(configPath);
+        DrawPath(configPath2, blue);
+
+        ExecuteTrajectory(configPath2);
         return true;
       }
       if(k % 5000 == 0)
@@ -491,7 +470,6 @@ public:
       return closestNode;
   }
 
-
   void ShortcutSmoothing(vector<NodePtr>& priorPath){
 
     for(int k = 0; k < SMOOTHING_ITERATIONS; ++k){
@@ -542,9 +520,32 @@ public:
         priorPath.insert(find(priorPath.begin(), priorPath.end(), temp)+1, shorter.begin()+1, shorter.end()-1);
       }else
         continue;
-
     }
   }
+
+  void DrawPath(vector< vector<dReal> >& path, string color){
+    _robot->SetActiveManipulator("leftarm");
+    RobotBase::ManipulatorPtr manipulator = _robot->GetActiveManipulator();
+
+    vector<float> raveColor;
+    if(color == "red")
+      raveColor = {1, 0, 0, 1};
+    if(color == "blue")
+      raveColor = {0, 0, 1, 1};
+
+
+    for(vector<dReal> config : path){
+      vector<float> point;
+      _robot->SetActiveDOFValues(config);
+      Transform t = manipulator->GetEndEffectorTransform();
+      RaveVector<dReal> translation = t.trans;
+      point.push_back(translation.x);
+      point.push_back(translation.y);
+      point.push_back(translation.z);
+      _handles.push_back(_penv->plot3(&point[0], 1, 1, 6, &raveColor[0], 0, true));
+    }
+  }
+
 
 private:
   EnvironmentBasePtr _penv;
@@ -558,6 +559,9 @@ private:
   NodePtr goalNode;
   vector<dReal> _activeDOFRanges;
   vector<dReal> _dofWeights;
+  vector<GraphHandlePtr> _handles;
+  string red = "red";
+  string blue = "blue";
   };
 
 
