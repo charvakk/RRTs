@@ -142,6 +142,8 @@ public:
     return true;
   }
 
+  /*-----------------------------------------------------------------------------Bi-Directional RRT----------------------------------------------------------------*/
+
   bool BiRRT(ostream& sout, istream& sin){
 
     // Initialize private members from the input
@@ -199,7 +201,7 @@ public:
           double timeForAlgorithm = (endTime-startTime)/(double)CLOCKS_PER_SEC;
           double timeForSmoothing = (endAfterSmoothing-endTime)/(double)CLOCKS_PER_SEC;
 
-          WriteBiStuffToFile(timeForAlgorithm, timeForSmoothing, (treeA->getSize()+treeB->getSize()), configPath.size());
+//          WriteBiStuffToFile(timeForAlgorithm, timeForSmoothing, (treeA->getSize()+treeB->getSize()), configPath.size());
 //
           cout << "Time for computing the path: " << timeForAlgorithm << endl;
           cout << "Time for smooothing the path: " << timeForSmoothing << endl;
@@ -214,6 +216,10 @@ public:
     cout << "Time up :(" << endl;
     return false;
   }
+
+  /*-----------------------------------------------------------------------------Bi-Directional RRT----------------------------------------------------------------*/
+
+  /*--------------------------------------------------------------------------------RRT-Connect--------------------------------------------------------------------*/
 
   bool RRTConnect(ostream& sout, istream& sin){
     // Initialize private members from the input
@@ -268,7 +274,7 @@ public:
         cout << "Time for computing the path: " << timeForAlgorithm << endl;
         cout << "Time for smooothing the path: " << timeForSmoothing << endl;
 
-        WriteStuffToFile(timeForAlgorithm, timeForSmoothing, tree->getSize(), configPath.size(), configPath2.size());
+//        WriteStuffToFile(timeForAlgorithm, timeForSmoothing, tree->getSize(), configPath.size(), configPath2.size());
 
         ExecuteTrajectory(configPath2);
         return true;
@@ -279,6 +285,9 @@ public:
     cout << "Time up :(" << endl;
     return false;
   }
+
+  /*--------------------------------------------------------------------------------RRT-Connect--------------------------------------------------------------------*/
+
 
   /* Initializes the members by calling the input parser. */
   void Init(ostream& so, istream& si){
